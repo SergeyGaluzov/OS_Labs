@@ -4,11 +4,6 @@ using namespace std;
 struct Header;
 struct Block;
 
-const int OFFSET = 4;
-size_t memory_align(size_t memory_size)
-{
-    return memory_size + memory_size % OFFSET;
-}
 struct Header
 {
     bool is_block_free;
@@ -226,7 +221,8 @@ int main()
 {
     Allocator* a = new Allocator(500);
     auto addr1 = a->mem_alloc(40);
-    auto addr2 = a->mem_realloc(addr1, 50);
+    auto addr2 = a->mem_realloc(addr1, 10);
+    a->mem_free(addr2);
     a->mem_dump();
     return 0;
 }
