@@ -11,9 +11,9 @@ size_t memory_align(size_t memory_size)
 }
 struct Header
 {
+    bool is_block_free;
     size_t data_size;
     size_t prev_data_size;
-    bool is_block_free;
 };
 const size_t HEADER_SIZE = sizeof(Header);
 struct Block
@@ -43,10 +43,7 @@ public:
         memcpy(block_start, &block->head.is_block_free, sizeof(block->head.is_block_free));
         memcpy(block_start + block->DATA_SIZE_OFFSET, &block->head.data_size, sizeof(block->head.data_size));
         memcpy(block_start + block->PREV_DATA_SIZE_OFFSET, &block->head.prev_data_size, sizeof(block->head.prev_data_size));
-/*        *block_start = static_cast<byte>(block->head.is_block_free); //0
-        *(block_start + block->DATA_SIZE_OFFSET) = static_cast<byte>(block->head.data_size); //1
-        *(block_start + block->PREV_DATA_SIZE_OFFSET) = static_cast<byte>(block->head.prev_data_size); //9*/
-        block->data = block_start + HEADER_SIZE; //24
+        block->data = block_start + HEADER_SIZE;
     }
     Allocator(size_t size)
     {
@@ -63,7 +60,6 @@ public:
             size_t block_data_size;
             memcpy(&block_data_size, memory + i + block->DATA_SIZE_OFFSET, sizeof(block_data_size));
             if ((bool)memory[i] && block_data_size >= size)
-//            if ((bool)memory[i] && (size_t)memory[i + block->DATA_SIZE_OFFSET] >= size)
             {
                 return split_block(memory + i, size);
             }
@@ -76,8 +72,8 @@ public:
     {
         byte* old_data_addr = (byte*)header_addr + HEADER_SIZE;
         size_t old_block_data_size, prev_block_data_size;
-        memcpy(&old_block_data_size, (byte*)header_addr + block->DATA_SIZE_OFFSET, sizeof(block->DATA_SIZE_OFFSET));
-        memcpy(&prev_block_data_size, (byte*)header_addr + block->PREV_DATA_SIZE_OFFSET, sizeof(block->PREV_DATA_SIZE_OFFSET));
+        memcpy(&old_block_data_size, (byte*)header_addr + block->DATA_SIZE_OFFSET, sizeof(old_block_data_size));
+        memcpy(&prev_block_data_size, (byte*)header_addr + block->PREV_DATA_SIZE_OFFSET, sizeof(prev_block_data_size));
 
         Block* block1 = new Block(first_block_data_size);
         block1->head.is_block_free = false;
@@ -189,20 +185,39 @@ public:
             size_t block_data_size, prev_block_data_size;
             memcpy(&block_data_size, memory + i + block->DATA_SIZE_OFFSET, sizeof(block_data_size));
             cout << "The block's data size: " << block_data_size << endl;
-//            cout << "The block's data size: " << (size_t)memory[i + block->DATA_SIZE_OFFSET] << endl;
             memcpy(&prev_block_data_size, memory + i + block->PREV_DATA_SIZE_OFFSET, sizeof(prev_block_data_size));
             cout << "Previous block's data size: " << prev_block_data_size << endl;
-//            cout << "Previous block's data size: " << (size_t)memory[i + block->PREV_DATA_SIZE_OFFSET] << endl;
             cout << "---------------------------------" << endl;
             counter++;
             i += (HEADER_SIZE + block_data_size);
-//            i += (HEADER_SIZE + (size_t)memory[i + block->DATA_SIZE_OFFSET]);
         }
     }
 
     void* mem_realloc(void* addr, size_t size)
     {
-        return nullptr;
+        byte* header_addr = (byte*)addr - HEADER_SIZE;
+        size_t current_data_size;
+        memcpy(&current_data_size, header_addr + block->DATA_SIZE_OFFSET, sizeof(block->DATA_SIZE_OFFSET));
+        byte* next_header_addr_before_split = header_addr + HEADER_SIZE + current_data_size;
+        if (size <= current_data_size)
+        {
+            byte *data_addr = (byte*)split_block(header_addr, size);
+            size_t first_block_data_size;
+            memcpy(&first_block_data_size, header_addr + block->DATA_SIZE_OFFSET, sizeof(block->DATA_SIZE_OFFSET));
+            byte *second_block_header_addr = header_addr + HEADER_SIZE + first_block_data_size;
+            if (next_header_addr_before_split != second_block_header_addr)
+            {
+                size_t prev_data_size = next_header_addr_before_split - second_block_header_addr - HEADER_SIZE;
+                memcpy(next_header_addr_before_split + block->PREV_DATA_SIZE_OFFSET, &prev_data_size, sizeof(prev_data_size));
+            }
+            mem_free(second_block_header_addr + HEADER_SIZE);
+            return data_addr;
+        }
+        else
+        {
+            mem_free(addr);
+            return mem_alloc(size);
+        }
     }
 };
 
@@ -210,7 +225,8 @@ public:
 int main()
 {
     Allocator* a = new Allocator(500);
-    auto addr1 = a->mem_alloc(20);
+    auto addr1 = a->mem_alloc(40);
+    auto addr2 = a->mem_realloc(addr1, 50);
     a->mem_dump();
     return 0;
 }
