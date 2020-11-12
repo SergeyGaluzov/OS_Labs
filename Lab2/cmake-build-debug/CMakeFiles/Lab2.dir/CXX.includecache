@@ -9,8 +9,12 @@
 /home/sergey/Desktop/OS/Lab2/main.cpp
 iostream
 -
-vector
+deque
+-
+map
 -
 cmath
+-
+cstring
 -
 
