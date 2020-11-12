@@ -1,8 +1,8 @@
-#Page Allocator
+# Page Allocator
 
 This is an implementation of memory allocator based on pages. 
 
-##Description
+## Description
 Each page is presented by its descriptor that contains info about page's state
 (free, divided into blocks or a part of multipage block), pointer to the page start in memory,
 a list of free blocks and block size(for divided into blocks pages), 
@@ -15,7 +15,7 @@ Every page contains blocks of only same size. Every block's size is the power of
 maximum block size is half a page size (512 bytes). In this implementation minimal block size is 16 bytes 
 and the page size is 1024 bytes.
 
-##Main functions: 
+## Main functions: 
 * `void* mem_alloc(size_t size)` - allocate block memory of `size` bytes.
 
 If size less or equal than half of page size then the page can be only divided into blocks or
@@ -40,7 +40,7 @@ Indeed it is just a sequence of `mem_free(addr)` and `mem_alloc(size)`invokes.
 
 * `void mem_dump()` - represent the current allocator's state.
 
-##Tests
+## Tests
 
 Allocate the size less than half of page
 
