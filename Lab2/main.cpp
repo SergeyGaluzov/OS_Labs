@@ -74,12 +74,13 @@ public:
         pageAmountInAllocator = allocatorSize / PageSize;
         memory = new byte[allocatorSize];
         descriptors.resize(pageAmountInAllocator);
+        byte* pageAddr = memory;
         for (int i = 0; i < pageAmountInAllocator; i++)
         {
-            byte* pageAddr = memory + i * PageSize;
-            PageDescriptor* descriptor;
+            pageAddr += PageSize;
+            PageDescriptor* descriptor = new PageDescriptor;
             descriptor->state = PageState::Free;
-            descriptor->pageStart = pageAddr + i * PageSize;
+            descriptor->pageStart = pageAddr;
             descriptor->firstFreeBlock = pageAddr;
             descriptors[i] = descriptor;
         }
@@ -92,7 +93,8 @@ public:
             auto blockSize = CalculateBlockSize(size);
             for (auto &descriptor : descriptors)
             {
-                if (descriptor->state == PageState::DividedIntoBlocks and descriptor->freeBlocksAmount > 0)
+                if (descriptor->state == PageState::DividedIntoBlocks and descriptor->freeBlocksAmount > 0
+                and blockSize <= descriptor->blockSize and blockSize > descriptor->blockSize / 2)
                 {
                     auto blockAddr = descriptor->firstFreeBlock;
                     descriptor->freeBlocksAmount--;
@@ -152,8 +154,8 @@ public:
         if (descriptor->state == PageState::DividedIntoBlocks)
         {
             descriptor->firstFreeBlock -= descriptor->blockSize;
-            descriptor->freeBlocksAmount--;
-            if (descriptor->freeBlocksAmount == 0) descriptor->state = PageState::Free;
+            descriptor->freeBlocksAmount++;
+            if (descriptor->freeBlocksAmount == PageSize / descriptor->blockSize) descriptor->state = PageState::Free;
         }
         else
         {
@@ -163,7 +165,8 @@ public:
             {
                 pageDescriptor->pageAmount = 0;
                 pageDescriptor->state = PageState::Free;
-
+                pageDescriptor->blockSize = 0;
+                pageDescriptor->firstFreeBlock = pageDescriptor->pageStart;
             }
         }
 
@@ -177,32 +180,58 @@ public:
 
     void mem_dump()
     {
+        cout << endl;
         cout << "Page amount: " << pageAmountInAllocator << endl;
-        cout << "Page size: " << PageSize << endl;
+        cout << "Page size: " << PageSize << endl << endl;
         for (int i = 0; i < pageAmountInAllocator; i++)
         {
             cout << "Page " << i + 1 << " | ";
             cout << "Address: " << descriptors[i]->pageStart << " | ";
             auto state = descriptors[i]->state == PageState::Free ? "Free" :
                          descriptors[i]->state == PageState::DividedIntoBlocks ? "DividedIntoBlocks" : "MultiplePageBlock";
-            cout << "State: " << state << endl;
+            cout << "State: " << state;
 
-            /*auto page = memory + i * PageSize;
-            auto header = headers[page];
-            auto state = header.state == PageState::Free ? "Free" :
-                         header.state == PageState::Divided ? "Divided" : "Multiple";
-            auto classSize = header.state == PageState::Divided ? " | Class size: " + to_string(header.blockSize) : "";
-            auto freePlace = header.state == PageState::Divided ? " | Free blocks: " + to_string(header.blocks) : "";
-            cout << "Page " << page << " " << state << classSize << freePlace << endl;*/
+            if (state != "Free")
+            {
+                if (state == "DividedIntoBlocks")
+                {
+                    auto blockSize = descriptors[i]->blockSize;
+                    cout << " | " << "Block size: " << blockSize << endl;
+                    for (int j = 0; j < PageSize / blockSize; j++)
+                    {
+                        cout <<'\t' << "Block " << j + 1 <<" | ";
+                        auto blockAddr = descriptors[i]->pageStart + j * blockSize;
+                        cout << "Address: " << blockAddr << " | ";
+                        cout << "Block state: " << (blockAddr < descriptors[i]->firstFreeBlock ? "Not free" : "Free") << endl;
+                    }
+                    cout << endl;
+                    continue;
+                }
+                else
+                {
+                    if (descriptors[i]->pageAmount != 0)
+                    {
+                        cout << " | " << "Pages in multipage block: " << descriptors[i]->pageAmount << endl;
+                    }
+                    else
+                    {
+                        cout << endl << endl;
+                    }
+                    continue;
+                }
+            }
+            cout << endl << endl;
         }
-        cout << endl;
     }
 };
 
 int main()
 {
     auto allocator = PageAllocator(4096);
-    auto loc1 = allocator.mem_alloc(102);
+    auto loc1 = allocator.mem_alloc(2000);
+    auto loc2 = allocator.mem_alloc(200);
+    auto loc3 = allocator.mem_alloc(200);
+    allocator.mem_free(loc2);
     allocator.mem_dump();
     return 0;
 }
