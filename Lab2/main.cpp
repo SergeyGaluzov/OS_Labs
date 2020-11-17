@@ -11,7 +11,6 @@ size_t const MinBlockSize = 16;
 
 class PageAllocator
 {
-
 private:
     enum class PageState
     {
@@ -43,7 +42,6 @@ private:
         }
         return blockSize;
     }
-
     void DivideFreePageIntoBlocks(PageDescriptor* descriptor, size_t blockSize)
     {
         descriptor->blockSize = blockSize;
@@ -53,22 +51,19 @@ private:
             descriptor->freeBlocks.push_back(addr);
         }
     }
-    byte* CreateMultiPageBlock(deque<PageDescriptor*> selectedDescriptors, size_t pageAmount)
+    void CreateMultiPageBlock(deque<PageDescriptor*> selectedDescriptors)
     {
-        selectedDescriptors[0]->pageAmount = pageAmount;
+        selectedDescriptors[0]->pageAmount = selectedDescriptors.size();
         for (auto &descriptor : selectedDescriptors)
         {
             descriptor->state = PageState::MultiplePageBlock;
             descriptor->blockSize = PageSize;
         }
-        return selectedDescriptors[0]->pageStart;
     }
     void FreePageDescriptor(PageDescriptor* descriptor)
     {
         descriptor->state = PageState::Free;
-        descriptor->freeBlocks.clear();
         descriptor->blockSize = 0;
-        descriptor->pageAmount = 0;
     }
 
 public:
@@ -84,6 +79,7 @@ public:
             pageAddr += PageSize;
             PageDescriptor* descriptor = new PageDescriptor;
             descriptor->state = PageState::Free;
+            descriptor->blockSize = 0;
             descriptor->pageStart = pageAddr;
             descriptors[i] = descriptor;
         }
@@ -96,8 +92,8 @@ public:
             auto blockSize = CalculateBlockSize(size);
             for (auto &descriptor : descriptors)
             {
-                if (descriptor->state == PageState::DividedIntoBlocks and descriptor->freeBlocks.size() > 0
-                and blockSize <= descriptor->blockSize and blockSize > descriptor->blockSize / 2)
+                if (descriptor->state == PageState::DividedIntoBlocks and !descriptor->freeBlocks.empty()
+                and blockSize == descriptor->blockSize)
                 {
                     auto blockAddr = descriptor->freeBlocks.front();
                     descriptor->freeBlocks.pop_front();
@@ -138,7 +134,8 @@ public:
 
                 if (selectedDescriptors.size() == pageAmount)
                 {
-                    return CreateMultiPageBlock(selectedDescriptors, pageAmount);
+                    CreateMultiPageBlock(selectedDescriptors);
+                    return selectedDescriptors[0]->pageStart;
                 }
             }
             return nullptr;
@@ -165,6 +162,7 @@ public:
         else
         {
             auto pageAmount = descriptor->pageAmount;
+            descriptor->pageAmount = 0;
             deque<PageDescriptor*> multiPageBlock(pageDescriptorIterator, pageDescriptorIterator + pageAmount);
             for (auto &pageDescriptor : multiPageBlock)
             {
@@ -228,18 +226,27 @@ public:
             cout << endl << endl;
         }
     }
+
+    ~PageAllocator()
+    {
+        for (auto &descriptor : descriptors)
+        {
+            delete descriptor;
+        }
+        delete[] memory;
+    }
 };
 
 int main()
 {
     auto allocator = PageAllocator(5000);
-    auto loc1 = allocator.mem_alloc(2000);
+    auto loc1 = allocator.mem_alloc(1000);
     auto loc2 = allocator.mem_alloc(200);
     auto loc3 = allocator.mem_alloc(200);
     auto loc4 = allocator.mem_alloc(200);
-    auto loc5 = allocator.mem_alloc(200);
-    allocator.mem_realloc(loc2, 100);
-    allocator.mem_free(loc5);
+//    auto loc5 = allocator.mem_alloc(130);
+//    allocator.mem_realloc(loc2, 100);
+//    allocator.mem_free(loc1);
     allocator.mem_dump();
     return 0;
 }
