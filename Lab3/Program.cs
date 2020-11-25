@@ -5,6 +5,7 @@ namespace Lab3
 {
     class Program
     {
+        
         class Process
         {
             public uint ProcessId { get; }
@@ -20,63 +21,65 @@ namespace Lab3
                 WaitTime = 0;
             }
         }
+        
+        private const int MaxExecutionProcessTime = 1000;
 
         class ProcessScheduler
         {
-            public List<Process> priorityList { private set;  get; }
-            public List<uint> pr { private set;  get; }
+            public List<Process> priorityProcessList { private set;  get; }
+            public List<uint> priorityList { private set;  get; }
 
             private void RecalculateProcessesWaitTimeFromIndex(int index)
             {
-                for (var i = index; i < priorityList.Count; i++)
+                for (var i = index; i < priorityProcessList.Count; i++)
                 {
-                    priorityList[i].WaitTime =
-                        i == 0 ? 0 : priorityList[i - 1].WaitTime + priorityList[i - 1].ExecutionTime;
+                    priorityProcessList[i].WaitTime =
+                        i == 0 ? 0 : priorityProcessList[i - 1].WaitTime + priorityProcessList[i - 1].ExecutionTime;
                 }
             }
 
-            private void AddToPriorityList(Process p)
+            private void AddToPriorityProcessList(Process p)
             {
-                if (priorityList.Count == 0)
+                if (priorityProcessList.Count == 0)
                 {
-                    pr.Add(p.Priority);
-                    priorityList.Add(p);
+                    priorityList.Add(p.Priority);
+                    priorityProcessList.Add(p);
                 }
                 else
                 {
-                    var index = priorityList.FindLastIndex(process => process.Priority == p.Priority);
+                    var index = priorityProcessList.FindLastIndex(process => process.Priority == p.Priority);
                     if (index == -1)
                     {
-                        pr.Add(p.Priority);
-                        pr.Sort();
-                        if (p.Priority == pr.Last())
+                        priorityList.Add(p.Priority);
+                        priorityList.Sort();
+                        if (p.Priority == priorityList.Last())
                         {
-                            index = priorityList.Count;
+                            index = priorityProcessList.Count;
                         }
                         else
                         {
-                            index = priorityList.FindIndex(process =>
-                                process.Priority == pr.First(priority => priority > p.Priority));
+                            index = priorityProcessList.FindIndex(process =>
+                                process.Priority == priorityList.First(priority => priority > p.Priority));
                         }
                     }
                     else
                     {
                         index += 1;
                     }
-                    priorityList.Insert(index, p);
+                    priorityProcessList.Insert(index, p);
                     RecalculateProcessesWaitTimeFromIndex(index);
                 }
             }
-            public ProcessScheduler(uint n)
+            public ProcessScheduler(int numberOfProcesses, int lowestPriority)
             {
-                priorityList = new List<Process>();
-                pr = new List<uint>();
-                for (uint i = 0; i < n; i++)
+                priorityProcessList = new List<Process>();
+                priorityList = new List<uint>();
+                for (uint i = 0; i < numberOfProcesses; i++)
                 {
                     Process p = new Process(i+ 1,
-                        (uint) new Random().Next(1, 8),
-                        (uint) new Random().Next(1, 5));
-                    AddToPriorityList(p);
+                        (uint) new Random().Next(1, lowestPriority + 1),
+                        (uint) new Random().Next(1, MaxExecutionProcessTime + 1));
+                    AddToPriorityProcessList(p);
                 }
             }
             
@@ -86,50 +89,50 @@ namespace Lab3
                 int allTime = 0;
                 uint t;
                 uint time = 0;
-                uint last_process_id = (uint)priorityList.Count;
+                uint last_process_id = (uint)priorityProcessList.Count;
                 do
                 {
-                    if (time == priorityList[0].ExecutionTime)
+                    if (time == priorityProcessList[0].ExecutionTime)
                     {
-                        t = priorityList[0].ExecutionTime;
-                        for (var j = 1; j < priorityList.Count; j++)
+                        t = priorityProcessList[0].ExecutionTime;
+                        for (var j = 1; j < priorityProcessList.Count; j++)
                         {
-                            priorityList[j].WaitTime -= t;
+                            priorityProcessList[j].WaitTime -= t;
                         }
                         time = 0;
 
-                        if (priorityList.FindAll(process => process.Priority == priorityList[0].Priority).Count == 1)
+                        if (priorityProcessList.FindAll(process => process.Priority == priorityProcessList[0].Priority).Count == 1)
                         {
-                            pr.Remove(priorityList[0].Priority);
+                            priorityList.Remove(priorityProcessList[0].Priority);
                         }
-                        priorityList.RemoveAt(0);
+                        priorityProcessList.RemoveAt(0);
                     }
                     if (allTime % intensivity == 0)
                     {
-                        AddToPriorityList(new Process(last_process_id + 1,
+                        AddTopriorityProcessList(new Process(last_process_id + 1,
                             (uint) new Random().Next(1, 8),
                             (uint) new Random().Next(1, 5)));
                         last_process_id += 1;
                     }
                     time++;
                     allTime++;
-                } while (priorityList.Any());
+                } while (priorityProcessList.Any());
                 Console.WriteLine(last_process_id);
             }*/
 
-            public long ExecutionTimeSum => priorityList.Sum(process => process.ExecutionTime);
-            public long WaitTimeSum => priorityList.Sum(process => process.WaitTime);
+            public long ExecutionTimeSum => priorityProcessList.Sum(process => process.ExecutionTime);
+            public long WaitTimeSum => priorityProcessList.Sum(process => process.WaitTime);
 
             public List<double> AvgExecutionTimeForPriority
             {
                 get
                 {
                     var timeList = new List<double>();
-                    foreach (var priority in pr)
+                    foreach (var priority in priorityList)
                     {
                         timeList.Add
                         (
-                            Math.Round(priorityList.FindAll(process => process.Priority == priority)
+                            Math.Round(priorityProcessList.FindAll(process => process.Priority == priority)
                                 .Average(process => process.ExecutionTime), 3)
                         );
                     }
@@ -141,11 +144,11 @@ namespace Lab3
                 get
                 {
                     var timeList = new List<double>();
-                    foreach (var priority in pr)
+                    foreach (var priority in priorityList)
                     {
                         timeList.Add
                         (
-                            Math.Round(priorityList.FindAll(process => process.Priority == priority)
+                            Math.Round(priorityProcessList.FindAll(process => process.Priority == priority)
                                 .Average(process => process.WaitTime), 3)
                         );
                     }
@@ -156,16 +159,20 @@ namespace Lab3
 
         static void Main(string[] args)
         {
-            const uint numberOfProcesses = 100;
-            ProcessScheduler scheduler = new ProcessScheduler(numberOfProcesses);
+            Console.Write("Enter the number of processes: ");
+            var numberOfProcesses = Convert.ToInt32(Console.ReadLine());
+            Console.Write("The hightest priority is 1. Enter the lowest priority: ");
+            var lowestPriority = Convert.ToInt32(Console.ReadLine());
+            
+            ProcessScheduler scheduler = new ProcessScheduler(numberOfProcesses, lowestPriority);
             
             Console.WriteLine($"\nTotal number of processes is: {numberOfProcesses}\n");
             
-            foreach (var process in scheduler.priorityList)
+            foreach (var process in scheduler.priorityProcessList)
             {
                 Console.WriteLine($"Process priority: {process.Priority}\t" + 
                                   $"Process ID: {process.ProcessId}\t   " +
-                              $"Process execution time: {process.ExecutionTime}\t" +
+                              $"Process execution time: {process.ExecutionTime}\t   " +
                                   $"Process wait time: {process.WaitTime}");
             }
             
@@ -186,6 +193,7 @@ namespace Lab3
             Console.WriteLine();
             Console.WriteLine($"The total execution time for all processes is: {scheduler.ExecutionTimeSum}");
             Console.WriteLine($"The total wait time for all processes is: {scheduler.WaitTimeSum}");
+            
             
         }
     }
