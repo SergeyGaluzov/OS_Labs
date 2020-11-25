@@ -9,24 +9,24 @@ using namespace std;
 size_t const PageSize = 1024;
 size_t const MinBlockSize = 16;
 
+enum PageState
+{
+    Free,
+    DividedIntoBlocks,
+    MultiplePageBlock,
+};
+struct PageDescriptor
+{
+    PageState state;
+    byte* pageStart;
+    deque <byte*> freeBlocks;
+    size_t blockSize;
+    size_t pageAmount;
+};
+
 class PageAllocator
 {
 private:
-    enum class PageState
-    {
-        Free,
-        DividedIntoBlocks,
-        MultiplePageBlock,
-    };
-    struct PageDescriptor
-    {
-        PageState state;
-        byte* pageStart;
-        deque <byte*> freeBlocks;
-        size_t blockSize;
-        size_t pageAmount;
-    };
-
     deque <PageDescriptor*> descriptors;
     byte* memory;
     size_t pageAmountInAllocator;
@@ -63,6 +63,7 @@ private:
     void FreePageDescriptor(PageDescriptor* descriptor)
     {
         descriptor->state = PageState::Free;
+        descriptor->freeBlocks.clear();
         descriptor->blockSize = 0;
     }
 
@@ -76,12 +77,12 @@ public:
         byte* pageAddr = memory;
         for (int i = 0; i < pageAmountInAllocator; i++)
         {
-            pageAddr += PageSize;
             PageDescriptor* descriptor = new PageDescriptor;
             descriptor->state = PageState::Free;
             descriptor->blockSize = 0;
             descriptor->pageStart = pageAddr;
             descriptors[i] = descriptor;
+            pageAddr += PageSize;
         }
     }
 
@@ -240,13 +241,13 @@ public:
 int main()
 {
     auto allocator = PageAllocator(5000);
-    auto loc1 = allocator.mem_alloc(1000);
+    auto loc1 = allocator.mem_alloc(2000);
     auto loc2 = allocator.mem_alloc(200);
     auto loc3 = allocator.mem_alloc(200);
     auto loc4 = allocator.mem_alloc(200);
-//    auto loc5 = allocator.mem_alloc(130);
-//    allocator.mem_realloc(loc2, 100);
-//    allocator.mem_free(loc1);
+    auto loc5 = allocator.mem_alloc(200);
+    allocator.mem_free(loc3);
+    allocator.mem_realloc(loc5, 500);
     allocator.mem_dump();
     return 0;
 }
