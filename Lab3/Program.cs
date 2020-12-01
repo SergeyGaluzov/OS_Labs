@@ -5,12 +5,12 @@ namespace Lab3
 {
     class Program
     {
-        
         class Process
         {
             public uint ProcessId { get; }
             public uint Priority { get; }
             public uint ExecutionTime { get;}
+            
             public uint WaitTime;
 
             public Process(uint id, uint priority, uint executionTime)
@@ -18,7 +18,6 @@ namespace Lab3
                 ProcessId = id;
                 Priority = priority;
                 ExecutionTime = executionTime;
-                WaitTime = 0;
             }
         }
         
@@ -26,15 +25,19 @@ namespace Lab3
 
         class ProcessScheduler
         {
-            public List<Process> priorityProcessList { private set;  get; }
-            public List<uint> priorityList { private set;  get; }
-
-            private void RecalculateProcessesWaitTimeFromIndex(int index)
+            public List<Process> priorityProcessList { get; }
+            private List<uint> priorityList { get; }
+            
+            public ProcessScheduler(int numberOfProcesses, int lowestPriority)
             {
-                for (var i = index; i < priorityProcessList.Count; i++)
+                priorityProcessList = new List<Process>();
+                priorityList = new List<uint>();
+                for (uint i = 0; i < numberOfProcesses; i++)
                 {
-                    priorityProcessList[i].WaitTime =
-                        i == 0 ? 0 : priorityProcessList[i - 1].WaitTime + priorityProcessList[i - 1].ExecutionTime;
+                    Process p = new Process(i+ 1,
+                        (uint) new Random().Next(1, lowestPriority + 1),
+                        (uint) new Random().Next(1, MaxExecutionProcessTime + 1));
+                    AddToPriorityProcessList(p);
                 }
             }
 
@@ -70,55 +73,15 @@ namespace Lab3
                     RecalculateProcessesWaitTimeFromIndex(index);
                 }
             }
-            public ProcessScheduler(int numberOfProcesses, int lowestPriority)
+            
+            private void RecalculateProcessesWaitTimeFromIndex(int index)
             {
-                priorityProcessList = new List<Process>();
-                priorityList = new List<uint>();
-                for (uint i = 0; i < numberOfProcesses; i++)
+                for (var i = index; i < priorityProcessList.Count; i++)
                 {
-                    Process p = new Process(i+ 1,
-                        (uint) new Random().Next(1, lowestPriority + 1),
-                        (uint) new Random().Next(1, MaxExecutionProcessTime + 1));
-                    AddToPriorityProcessList(p);
+                    priorityProcessList[i].WaitTime =
+                        i == 0 ? 0 : priorityProcessList[i - 1].WaitTime + priorityProcessList[i - 1].ExecutionTime;
                 }
             }
-            
-            /*public void Start()
-            {
-                const int intensivity = 6;
-                int allTime = 0;
-                uint t;
-                uint time = 0;
-                uint last_process_id = (uint)priorityProcessList.Count;
-                do
-                {
-                    if (time == priorityProcessList[0].ExecutionTime)
-                    {
-                        t = priorityProcessList[0].ExecutionTime;
-                        for (var j = 1; j < priorityProcessList.Count; j++)
-                        {
-                            priorityProcessList[j].WaitTime -= t;
-                        }
-                        time = 0;
-
-                        if (priorityProcessList.FindAll(process => process.Priority == priorityProcessList[0].Priority).Count == 1)
-                        {
-                            priorityList.Remove(priorityProcessList[0].Priority);
-                        }
-                        priorityProcessList.RemoveAt(0);
-                    }
-                    if (allTime % intensivity == 0)
-                    {
-                        AddTopriorityProcessList(new Process(last_process_id + 1,
-                            (uint) new Random().Next(1, 8),
-                            (uint) new Random().Next(1, 5)));
-                        last_process_id += 1;
-                    }
-                    time++;
-                    allTime++;
-                } while (priorityProcessList.Any());
-                Console.WriteLine(last_process_id);
-            }*/
 
             public long ExecutionTimeSum => priorityProcessList.Sum(process => process.ExecutionTime);
             public long WaitTimeSum => priorityProcessList.Sum(process => process.WaitTime);
@@ -193,8 +156,7 @@ namespace Lab3
             Console.WriteLine();
             Console.WriteLine($"The total execution time for all processes is: {scheduler.ExecutionTimeSum}");
             Console.WriteLine($"The total wait time for all processes is: {scheduler.WaitTimeSum}");
-            
-            
+
         }
     }
 }
