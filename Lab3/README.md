@@ -30,3 +30,10 @@ After each process insertion we should use `RecalculateProcessesWaitTimeFromInde
 
 ![](img/Screenshot_20201125_222154.png)
 
+## Graphics
+
+1) Dependence of the average process waiting time on the priority
+![](img/Screenshot_20201202_202147.png)
+
+2) Dependence of the average process waiting time on the process intensity
+![](img/Screenshot_20201202_204913.png)

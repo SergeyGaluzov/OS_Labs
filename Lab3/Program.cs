@@ -21,7 +21,7 @@ namespace Lab3
             }
         }
         
-        private const int MaxExecutionProcessTime = 1000;
+        private const int MaxExecutionProcessTime = 10;
 
         class ProcessScheduler
         {
