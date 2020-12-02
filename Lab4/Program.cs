@@ -1,153 +1,139 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Lab4
 {
     class Program
     {
-        class Edge
+        class Task
         {
-            public char source { get; }
-            public char destination { get; }
-            public int weight { get; }
+            public readonly string title;
+            public uint executionTime;
+            public uint criticalTime;
 
-            public Edge(char source, char destination, int weight)
+            public Task(string title)
             {
-                this.source = source;
-                this.destination = destination;
-                this.weight = weight;
+                this.title = title;
+                executionTime = 0;
+                criticalTime = 0;
             }
         }
-
-        class Graph
+        class Scheduler
         {
-            private List<Edge> edges;
-            public List<char> vertices => edges.Select(edge => edge.source).Union(edges.Select(e => e.destination)).ToList();
+            private readonly List<Task> tasks;
+            private readonly List<List<uint>> matrix;
 
-            public Graph()
+            public Scheduler(List<Task> tasks, List<List<uint>> matrix)
             {
-                edges = new List<Edge>();
+                this.tasks = tasks;
+                this.matrix = matrix;
+                InitExecutionTimes();
+                CalculateCriticalTimes();
             }
-
-            public void AddEdge(Edge e)
+            private void InitExecutionTimes()
             {
-                edges.Add(e);
-            }
-
-            private List<Edge> InvertWeightsSign()
-            {
-                return edges.Select(edge => new Edge(edge.source, edge.destination, -edge.weight)).ToList();
-            }
-
-            public Dictionary<char, int> LongestPathsLengthes(char start)
-            {
-                Dictionary<char, int> paths = new Dictionary<char, int>();
-                foreach (var vertice in vertices)
+                for (var i = 0; i < matrix.Count; i++)
                 {
-                    paths.Add(vertice, int.MaxValue);
+                    tasks[i].executionTime = matrix[i].FirstOrDefault(elem => elem != 0 && elem != int.MaxValue);
                 }
-                paths[start] = 0;
-                
-                var verticeQueue = new List<char>();
-                verticeQueue.Add(start);
-                
-                while (verticeQueue.Count != 0)
-                {
-                    // var verticeOutputEdges = edges.FindAll(edge => edge.source == verticeQueue[0]);
-                    var verticeOutputEdges = InvertWeightsSign().FindAll(edge => edge.source == verticeQueue[0]);
-                    verticeQueue.RemoveAt(0);
-                    foreach (var outputEdge in verticeOutputEdges)
-                    {
-                        verticeQueue.Add(outputEdge.destination);
-                        if (paths[outputEdge.source] + outputEdge.weight < paths[outputEdge.destination])
-                        {
-                            paths[outputEdge.destination] = paths[outputEdge.source] + outputEdge.weight;
-                        }
-                    }
-                }
-
-                foreach (var vertice in vertices)
-                {
-                    paths[vertice] = -paths[vertice];
-                }
-
-                return paths;
-            }
-
-            public Dictionary<char, Tuple<int, List<char>>> LongestPaths(char start)
-            {
-                var pathsLengths = LongestPathsLengthes(start);
-                Dictionary<char, Tuple<int, List<char>>> paths = new Dictionary<char, Tuple<int, List<char>>>();
-                foreach (var pathLength in pathsLengths)
-                {
-                    paths.Add(pathLength.Key, new Tuple<int, List<char>>(pathLength.Value, new List<char>()));
-                }
-
-                foreach (var vertice in vertices)
-                {
-                    var queue = new List<char> {vertice};
-                    paths[vertice].Item2.Insert(0, vertice);
-                    while (queue.Count != 0)
-                    {
-                        var inputEdges = edges.FindAll(edge => edge.destination == queue[0]).ToList();
-                        foreach (var inputEdge in inputEdges)
-                        {
-                            if (pathsLengths[queue[0]] - inputEdge.weight == pathsLengths[inputEdge.source])
-                            {
-                                paths[vertice].Item2.Insert(0,inputEdge.source);
-                                queue.Add(inputEdge.source);
-                                break;
-                            }
-                        }
-                        queue.RemoveAt(0);
-                    }
-                }
-                
-                paths[start].Item2.Insert(0, start);
-                return paths;
             }
             
+            
+            private void CalculateCriticalTimes()
+            {
+                var queue = new List<Task> {tasks.Last()};
+                while (queue.Any())
+                {
+                    var currTask = queue[0];
+                    var previousTasksIndexes = Enumerable.Range(0, tasks.Count)
+                        .Where(index => matrix[index][tasks.IndexOf(currTask)] != 0).ToList();
+                    foreach (var i in previousTasksIndexes)
+                    {
+                        if (tasks[i].executionTime + currTask.criticalTime > tasks[i].criticalTime)
+                        {
+                            tasks[i].criticalTime = tasks[i].executionTime + currTask.criticalTime;
+                        }
+                        if (!queue.Contains(tasks[i])) queue.Add(tasks[i]);
+                    }
+                    queue.RemoveAt(0);
+                }
+            }
+
+            private List<Task> CalculateCriticalPath()
+            {
+                var currTask = tasks[0];
+                var path = new List<Task>{currTask};
+                while (currTask != tasks.Last())
+                {
+                    var nextTasksIndexes = Enumerable.Range(0, tasks.Count)
+                        .Where(index => matrix[tasks.IndexOf(currTask)][index] != 0).ToList();
+                    foreach (var i in nextTasksIndexes)
+                    {
+                        if (currTask.criticalTime - currTask.executionTime == tasks[i].criticalTime)
+                        {
+                            currTask = tasks[i];
+                            path.Add(currTask);
+                            break;
+                        }
+                    }
+                }
+                return path;
+            }
+            
+            public void PrintCriticalPathInfo()
+            {
+                var path = CalculateCriticalPath();
+                Console.Write("Critical path is:  ");
+                for (var i = 0; i < path.Count; i++)
+                {
+                    Console.Write(i != path.Count - 1
+                        ? $"{path[i].title}->"
+                        : $"{path[i].title}");
+                }
+                Console.WriteLine($"\nCritical path\'s length is {tasks[0].criticalTime}");
+            }
         }
         static void Main(string[] args)
         {
-            Graph graph = new Graph();
-            var edges = new List<Edge>()
+            var tasks = new List<Task>
             {
-                new Edge('A', 'B', 3),
-                new Edge('A', 'C', 6),
-                new Edge('B', 'C', 4),
-                new Edge('B', 'D', 4),
-                new Edge('B', 'E', 11),
-                new Edge('C', 'D', 8),
-                new Edge('C', 'G', 11),
-                new Edge('D', 'E', -4),
-                new Edge('D', 'F', 5),
-                new Edge('D', 'G', 2),
-                new Edge('E', 'H', 9),
-                new Edge('F', 'H', 1),
-                new Edge('G', 'H', 2),
+                new Task("START"),
+                new Task("A"),
+                new Task("B"),
+                new Task("C"),
+                new Task("D"),
+                new Task("E"),
+                new Task("F"),
+                new Task("G"),
+                new Task("H"),
+                new Task("I"),
+                new Task("J"),
+                new Task("K"),
+                new Task("END"),
             };
-            foreach (var edge in edges)
-            {
-                graph.AddEdge(edge);
-            }
             
-
-            var longestPathsInfo = graph.LongestPaths('A');
-            foreach (var info in longestPathsInfo)
+            const uint max = int.MaxValue;
+            
+            var matrix = new List<List<uint>>
             {
-                Console.Write($"Vertex {info.Key}:\t");
-                Console.Write($"Path\'s length = {info.Value.Item1}\t");
-                Console.Write("Path: ");
-                for (var i = 0; i < info.Value.Item2.Count; i++)
-                {
-                    Console.Write(i != info.Value.Item2.Count - 1
-                        ? $"{info.Value.Item2[i]}->"
-                        : $"{info.Value.Item2[i]}");
-                }
-                Console.WriteLine();
-            }
+                new List<uint> {0,max,max,max,max,0,0,0,0,0,0,0,0},
+                new List<uint> {0,0,0,0,0,2,0,0,0,0,0,0,0},
+                new List<uint> {0,0,0,0,0,3,3,0,0,0,0,0,0},
+                new List<uint> {0,0,0,0,0,0,0,11,11,0,0,0,0},
+                new List<uint> {0,0,0,0,0,0,0,14,14,0,0,0,0},
+                new List<uint> {0,0,0,0,0,0,0,0,0,5,0,0,0},
+                new List<uint> {0,0,0,0,0,0,0,0,0,3,0,0,0},
+                new List<uint> {0,0,0,0,0,0,0,0,0,0,0,2,0},
+                new List<uint> {0,0,0,0,0,0,0,0,0,0,4,0,0},
+                new List<uint> {0,0,0,0,0,0,0,0,0,0,0,13,0},
+                new List<uint> {0,0,0,0,0,0,0,0,0,0,0,0,7},
+                new List<uint> {0,0,0,0,0,0,0,0,0,0,0,0,18},
+                new List<uint> {0,0,0,0,0,0,0,0,0,0,0,0,0}
+            };
+            
+            var scheduler = new Scheduler(tasks, matrix);
+            scheduler.PrintCriticalPathInfo();
         }
     }
 }
