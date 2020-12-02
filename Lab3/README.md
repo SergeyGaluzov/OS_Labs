@@ -28,7 +28,9 @@ After each process insertion we should use `RecalculateProcessesWaitTimeFromInde
 
 ## Test 
 
-![](img/Screenshot_20201125_222154.png)
+![](img/2.png)
+...
+![](img/1.png)
 
 ## Graphics
 
