@@ -6,13 +6,13 @@ namespace Lab4
 {
     class Program
     {
-        class Task
+        class Process
         {
             public readonly string title;
             public uint executionTime;
             public uint criticalTime;
 
-            public Task(string title)
+            public Process(string title)
             {
                 this.title = title;
                 executionTime = 0;
@@ -21,12 +21,12 @@ namespace Lab4
         }
         class Scheduler
         {
-            private readonly List<Task> tasks;
+            private readonly List<Process> processes;
             private readonly List<List<uint>> matrix;
 
-            public Scheduler(List<Task> tasks, List<List<uint>> matrix)
+            public Scheduler(List<Process> processes, List<List<uint>> matrix)
             {
-                this.tasks = tasks;
+                this.processes = processes;
                 this.matrix = matrix;
                 InitExecutionTimes();
                 CalculateCriticalTimes();
@@ -35,45 +35,45 @@ namespace Lab4
             {
                 for (var i = 0; i < matrix.Count; i++)
                 {
-                    tasks[i].executionTime = matrix[i].FirstOrDefault(elem => elem != 0 && elem != int.MaxValue);
+                    processes[i].executionTime = matrix[i].FirstOrDefault(elem => elem != 0 && elem != int.MaxValue);
                 }
             }
             
             
             private void CalculateCriticalTimes()
             {
-                var queue = new List<Task> {tasks.Last()};
+                var queue = new List<Process> {processes.Last()};
                 while (queue.Any())
                 {
-                    var currTask = queue[0];
-                    var previousTasksIndexes = Enumerable.Range(0, tasks.Count)
-                        .Where(index => matrix[index][tasks.IndexOf(currTask)] != 0).ToList();
-                    foreach (var i in previousTasksIndexes)
+                    var currProcess = queue[0];
+                    var previousProcessesIndexes = Enumerable.Range(0, processes.Count)
+                        .Where(index => matrix[index][processes.IndexOf(currProcess)] != 0).ToList();
+                    foreach (var i in previousProcessesIndexes)
                     {
-                        if (tasks[i].executionTime + currTask.criticalTime > tasks[i].criticalTime)
+                        if (processes[i].executionTime + currProcess.criticalTime > processes[i].criticalTime)
                         {
-                            tasks[i].criticalTime = tasks[i].executionTime + currTask.criticalTime;
+                            processes[i].criticalTime = processes[i].executionTime + currProcess.criticalTime;
                         }
-                        if (!queue.Contains(tasks[i])) queue.Add(tasks[i]);
+                        if (!queue.Contains(processes[i])) queue.Add(processes[i]);
                     }
                     queue.RemoveAt(0);
                 }
             }
 
-            private List<Task> CalculateCriticalPath()
+            private List<Process> CalculateCriticalPath()
             {
-                var currTask = tasks[0];
-                var path = new List<Task>{currTask};
-                while (currTask != tasks.Last())
+                var currProcess = processes[0];
+                var path = new List<Process>{currProcess};
+                while (currProcess != processes.Last())
                 {
-                    var nextTasksIndexes = Enumerable.Range(0, tasks.Count)
-                        .Where(index => matrix[tasks.IndexOf(currTask)][index] != 0).ToList();
-                    foreach (var i in nextTasksIndexes)
+                    var nextProcessesIndexes = Enumerable.Range(0, processes.Count)
+                        .Where(index => matrix[processes.IndexOf(currProcess)][index] != 0).ToList();
+                    foreach (var i in nextProcessesIndexes)
                     {
-                        if (currTask.criticalTime - currTask.executionTime == tasks[i].criticalTime)
+                        if (currProcess.criticalTime - currProcess.executionTime == processes[i].criticalTime)
                         {
-                            currTask = tasks[i];
-                            path.Add(currTask);
+                            currProcess = processes[i];
+                            path.Add(currProcess);
                             break;
                         }
                     }
@@ -91,26 +91,26 @@ namespace Lab4
                         ? $"{path[i].title}->"
                         : $"{path[i].title}");
                 }
-                Console.WriteLine($"\nCritical path\'s length is {tasks[0].criticalTime}");
+                Console.WriteLine($"\nCritical path\'s length is {processes[0].criticalTime}");
             }
         }
         static void Main(string[] args)
         {
-            var tasks = new List<Task>
+            var processes = new List<Process>
             {
-                new Task("START"),
-                new Task("A"),
-                new Task("B"),
-                new Task("C"),
-                new Task("D"),
-                new Task("E"),
-                new Task("F"),
-                new Task("G"),
-                new Task("H"),
-                new Task("I"),
-                new Task("J"),
-                new Task("K"),
-                new Task("END"),
+                new Process("START"),
+                new Process("A"),
+                new Process("B"),
+                new Process("C"),
+                new Process("D"),
+                new Process("E"),
+                new Process("F"),
+                new Process("G"),
+                new Process("H"),
+                new Process("I"),
+                new Process("J"),
+                new Process("K"),
+                new Process("END"),
             };
             
             const uint max = int.MaxValue;
@@ -132,7 +132,7 @@ namespace Lab4
                 new List<uint> {0,0,0,0,0,0,0,0,0,0,0,0,0}
             };
             
-            var scheduler = new Scheduler(tasks, matrix);
+            var scheduler = new Scheduler(processes, matrix);
             scheduler.PrintCriticalPathInfo();
         }
     }
