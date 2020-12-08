@@ -20,7 +20,9 @@ namespace Lab5
             
             stopWatch.Stop();
             var time1 = stopWatch.Elapsed.TotalMilliseconds;
+            
             stopWatch.Restart();
+            
             int[,] c = new int[100,100];
             
             for (int j = 0; j < 100; j++)
