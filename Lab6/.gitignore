@@ -60,6 +60,8 @@ cmake-build-*/
 # File-based project format
 *.iws
 
+Lab6.sln.DotSettings.user
+
 # IntelliJ
 out/
 
