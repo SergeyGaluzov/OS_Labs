@@ -2,7 +2,7 @@
 
 ##### The purpose of the Lab3 is to create the process scheduler simulator that can organise different processes into the order for executing by system.
 
-My variant is 7 so I've created the Process Scheduler Simulator based on 
+I've created the Process Scheduler Simulator based on 
 **algorithm PQ (Priority Queuing)**.
 
 ## Process structure:
