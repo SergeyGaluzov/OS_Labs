@@ -1,6 +1,6 @@
 # Lab4 - Dynamic Process Scheduling
 
-My variant is 9 - finding the critical path in the weighted, acyclic, directed graph of processes.
+Finding the critical path in the weighted, acyclic, directed graph of processes.
 
 ### Theory and algorithms' descriptions
 Critical path in graph is the longest path between the vertice and the end vertice.

@@ -8,7 +8,7 @@ namespace Lab6
         {
             for (int i = 0; i < 10; i++)
             {
-                Thread.Sleep(100);
+                // Thread.Sleep(100);
             }
         }
 
@@ -16,7 +16,7 @@ namespace Lab6
         {
             for (int i = 0; i < 10; i++)
             {
-                Thread.Sleep(100);
+                // Thread.Sleep(100);
             }
         }
         
@@ -31,9 +31,11 @@ namespace Lab6
                 {
                     case "square":
                         DrawSquare();
+                        typeOfShape = "circle";
                         break;
                     case "circle":
                         DrawCircle();
+                        typeOfShape = "square";
                         break;
                 }
             }
